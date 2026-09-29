@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Prentice1 Work Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f1ea; --panel:#fffdf9; --panel2:#f0e9dd; --ink:#1d1a16; --muted:#7a7166; --line:#e4dccf; --grid:#eee6d9;
+  --accent:#b8893a; --todo:#b9b0a2; --prog:#4a78b5; --done:#4f8a5b; --block:#c0503f; --today:#d1482f;
+  --shadow:0 8px 30px rgba(40,30,15,.14);
+  --serif:'Fraunces',Georgia,'Times New Roman',serif; --sans:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14110e; --panel:#1c1815; --panel2:#25201b; --ink:#f1ebe1; --muted:#9b9184; --line:#2f2922; --grid:#241f1a;
+    --accent:#d3a54e; --todo:#6f675c; --prog:#6b97d3; --done:#6aa878; --block:#d9695a; --today:#ef6a4f;
+    --shadow:0 8px 30px rgba(0,0,0,.5);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14110e; --panel:#1c1815; --panel2:#25201b; --ink:#f1ebe1; --muted:#9b9184; --line:#2f2922; --grid:#241f1a;
+  --accent:#d3a54e; --todo:#6f675c; --prog:#6b97d3; --done:#6aa878; --block:#d9695a; --today:#ef6a4f;
+  --shadow:0 8px 30px rgba(0,0,0,.5);
+}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:13px;display:flex;flex-direction:column;overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+
+.top{padding:14px 20px 10px;display:flex;flex-wrap:wrap;gap:14px 24px;align-items:flex-end;justify-content:space-between}
+.brand h1{font-family:var(--serif);font-weight:600;font-size:22px;margin:0;letter-spacing:-.01em}
+.brand p{margin:2px 0 0;color:var(--muted);font-size:12px}
+.stats{display:flex;gap:8px;flex-wrap:wrap}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 12px;min-width:84px}
+.stat b{display:block;font-size:17px;font-weight:600;font-family:var(--serif)}
+.stat span{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.stat.warn b{color:var(--block)}
+
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:6px 20px 12px}
+.bar .sp{flex:1}
+.ctl{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 10px;height:32px}
+input.ctl{min-width:150px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel)}
+.seg button{border:0;background:transparent;padding:0 12px;height:30px;color:var(--muted)}
+.seg button.on{background:var(--ink);color:var(--bg)}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:8px;height:32px;padding:0 12px}
+.btn:hover{background:var(--panel2)}
+.btn.pri{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:500}
+.btn.danger{color:var(--block);border-color:var(--block)}
+.btn.danger.arm{background:var(--block);color:#fff}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+
+.legend{display:flex;gap:12px;align-items:center;color:var(--muted);font-size:11.5px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+
+.scroll{flex:1;min-height:0;overflow:auto;margin:0 20px 16px;border:1px solid var(--line);border-radius:12px;background:var(--panel);position:relative}
+.inner{position:relative}
+.hdr{position:sticky;top:0;z-index:6;display:flex;background:var(--panel)}
+.lcell{position:sticky;left:0;z-index:4;flex:none;background:var(--panel);border-right:1px solid var(--line);display:flex;align-items:center;gap:8px;padding:0 10px}
+.hdr .lcell{z-index:7;height:52px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--line)}
+.hdr .tl{flex:none;border-bottom:1px solid var(--line)}
+.mrow,.srow{display:flex;height:26px;overflow:hidden}
+.mrow div{border-left:1px solid var(--line);padding:5px 8px;font-weight:600;font-size:11.5px;white-space:nowrap;overflow:hidden}
+.srow div{border-left:1px solid var(--grid);padding:5px 4px;font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden}
+.srow div.wk{font-variant-numeric:tabular-nums}
+.srow div.tue{color:var(--accent);font-weight:600}
+.row{display:flex;height:38px;border-bottom:1px solid var(--grid)}
+.row:hover .lcell,.row:hover .tcell{background-color:var(--panel2)}
+.tcell{position:relative;flex:none;background-image:linear-gradient(to right,var(--grid) 1px,transparent 1px)}
+.grp{height:34px;background:var(--panel2)}
+.grp .lcell{background:var(--panel2);font-weight:600;cursor:pointer;user-select:none}
+.grp .tcell{background-color:var(--panel2)}
+.grp:hover .lcell,.grp:hover .tcell{background-color:var(--panel2)}
+.caret{width:14px;display:inline-block;transition:transform .15s;color:var(--muted)}
+.collapsed .caret{transform:rotate(-90deg)}
+.gname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--serif);font-size:14px}
+.gmeta{color:var(--muted);font-weight:400;font-size:11px}
+.gadd{border:0;background:transparent;font-size:16px;color:var(--muted);width:24px;height:24px;border-radius:6px}
+.gadd:hover{background:var(--line);color:var(--ink)}
+.gsum{position:absolute;top:13px;height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.gsum i{display:block;height:100%;background:var(--done);opacity:.75}
+
+.chk{cursor:default;flex:none;width:18px;height:18px;border-radius:50%;border:1.5px solid var(--todo);background:transparent;padding:0;display:grid;place-items:center;color:#fff;font-size:11px;line-height:1}
+.chk.done{background:var(--done);border-color:var(--done)}
+.tname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+.tname.done{color:var(--muted);text-decoration:line-through}
+.warn{color:var(--block);font-size:12px;flex:none}
+.own{flex:none;display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);max-width:92px}
+.own b{flex:none;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:9.5px;font-weight:600}
+.own span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.tbar{position:absolute;top:8px;height:22px;border-radius:6px;background:color-mix(in srgb,var(--c) 28%,transparent);border:1px solid var(--c);cursor:pointer;overflow:visible}
+.tbar .fill{position:absolute;inset:0 auto 0 0;background:var(--c);border-radius:5px 0 0 5px;opacity:.9;pointer-events:none}
+.tbar .fill.full{border-radius:5px}
+.tbar.late{box-shadow:0 0 0 2px color-mix(in srgb,var(--block) 45%,transparent)}
+.tbar .h{position:absolute;top:0;bottom:0;width:8px;cursor:ew-resize}
+.tbar .h.l{left:-3px}.tbar .h.r{right:-3px}
+.tbar .lab{position:absolute;left:calc(100% + 8px);top:3px;white-space:nowrap;font-size:11px;color:var(--muted);pointer-events:none}
+.tbar .in{position:absolute;left:8px;top:3px;font-size:11px;color:#fff;white-space:nowrap;pointer-events:none;font-weight:500;mix-blend-mode:normal;text-shadow:0 1px 1px rgba(0,0,0,.25)}
+.ms{position:absolute;top:9px;width:20px;height:20px;margin-left:-10px;cursor:pointer}
+.ms i{display:block;width:14px;height:14px;margin:3px;transform:rotate(45deg);background:var(--c);border:2px solid var(--panel);box-shadow:0 0 0 1px var(--c);border-radius:2px}
+.ms .lab{position:absolute;left:24px;top:2px;white-space:nowrap;font-size:11px;color:var(--muted);pointer-events:none}
+.todayline{position:absolute;top:0;bottom:0;width:0;border-left:2px solid var(--today);z-index:3;pointer-events:none}
+.todaytag{position:absolute;top:0;transform:translateX(-50%);background:var(--today);color:#fff;font-size:9.5px;font-weight:600;padding:1px 6px;border-radius:0 0 6px 6px;z-index:8;pointer-events:none;letter-spacing:.05em}
+.empty{padding:60px 20px;text-align:center;color:var(--muted);position:sticky;left:0;width:min(100%,600px)}
+.empty h3{font-family:var(--serif);color:var(--ink);font-size:18px;margin:0 0 6px}
+
+.mask{position:fixed;inset:0;background:rgba(15,10,5,.45);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+.mask.on{display:flex}
+.modal{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);width:min(520px,100%);max-height:calc(100% - 20px);overflow:auto;padding:20px}
+.modal h2{font-family:var(--serif);margin:0 0 14px;font-size:18px}
+.f{display:grid;gap:4px;margin-bottom:11px}
+.f label{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.f input,.f select,.f textarea{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 9px;width:100%}
+.f textarea{min-height:70px;resize:vertical}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.actions{display:flex;gap:8px;justify-content:flex-end;margin-top:6px;align-items:center}
+.actions .sp{flex:1}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:9px;z-index:60;display:none;font-size:12.5px}
+.ro{background:var(--panel2);color:var(--muted);padding:6px 20px;font-size:12px}
+@media (max-width:700px){
+  .top{padding:12px 14px 6px}.bar{padding:6px 14px 10px}.scroll{margin:0 10px 10px}
+  .own span{display:none}.stat{min-width:70px}
+}
+.tbar:hover{filter:brightness(1.08)}
+.dtop{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.pill{display:inline-block;padding:3px 10px;border-radius:999px;color:#fff;font-size:11px;font-weight:600;letter-spacing:.03em}
+.modal h2{font-size:20px;margin:0 0 14px;line-height:1.25}
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;margin-bottom:14px}
+.dgrid div small{display:block;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px}
+.dgrid div span{font-size:13.5px}
+.dprog{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.dprogbar{flex:1;height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.dprogbar i{display:block;height:100%;background:var(--c,var(--prog))}
+#dPct{font-size:12px;color:var(--muted);min-width:36px;text-align:right}
+.dwarn{background:color-mix(in srgb,var(--block) 14%,transparent);color:var(--block);border-radius:8px;padding:7px 10px;font-size:12px;margin-bottom:12px}
+.dlabel{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:4px 0 4px}
+.dnotes{font-size:13.5px;line-height:1.5;margin-bottom:12px;white-space:pre-wrap}
+.deplink{background:none;border:0;padding:0;color:var(--prog);text-decoration:underline;cursor:pointer;font-size:13.5px}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="brand">
+    <h1>Prentice1 Work Tracker</h1>
+    <p>Path to the Q1 2027 first cohort. View only: click any task or milestone for details.</p>
+  </div>
+  <div class="stats" id="stats"></div>
+</div>
+<div class="bar">
+  <select class="ctl" id="fOwner" aria-label="Filter by owner"></select>
+  <select class="ctl" id="fStatus" aria-label="Filter by status">
+    <option value="">All statuses</option>
+    <option value="todo">To do</option>
+    <option value="progress">In progress</option>
+    <option value="blocked">Blocked</option>
+    <option value="done">Done</option>
+  </select>
+  <input class="ctl" id="fQ" type="search" placeholder="Search tasks" aria-label="Search tasks">
+  <span class="sp"></span>
+  <div class="legend" id="legend"></div>
+  <div class="seg" id="zoom">
+    <button data-z="days">Days</button><button data-z="weeks" class="on">Weeks</button><button data-z="months">Months</button>
+  </div>
+  <button class="btn" id="bToday">Today</button>
+  <button class="btn" id="bCollapse">Collapse all</button>
+</div>
+
+<div class="scroll" id="scroll"><div class="inner" id="inner"></div></div>
+
+<div class="mask" id="mask">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="dTitle">
+    <div class="dtop"><span class="pill" id="dStatus"></span><button class="btn" id="dClose" aria-label="Close">Close</button></div>
+    <h2 id="dTitle"></h2>
+    <div class="dgrid" id="dGrid"></div>
+    <div class="dprog"><div class="dprogbar"><i id="dFill"></i></div><span id="dPct"></span></div>
+    <div id="dWarn" class="dwarn" style="display:none"></div>
+    <div class="dlabel">Notes</div>
+    <div id="dNotes" class="dnotes"></div>
+    <div class="dlabel" id="dDepL">Depends on</div>
+    <div id="dDep"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+var DAY=86400000, ROW=38;
+var PPD={days:30,weeks:14,months:5};
+var STATUS={todo:{n:'To do',c:'var(--todo)'},progress:{n:'In progress',c:'var(--prog)'},blocked:{n:'Blocked',c:'var(--block)'},done:{n:'Done',c:'var(--done)'}};
+var OWNER_COLORS={steve:'#b8893a',rivkin:'#4a78b5',aneesh:'#7b5ea7',tara:'#c0708a',group:'#6b6459'};
+var MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+var DOW=['S','M','T','W','T','F','S'];
+
+var tasks=[{"dep": "t02", "end": "2026-10-30", "milestone": false, "name": "Form LLC via Stripe Atlas (equal partners)", "notes": "LLC, payment processor, banking. Equal partner split.", "order": 10, "owner": "Steve", "phase": "1. Company and money", "progress": 0, "start": "2026-10-15", "status": "todo", "id": "t01"}, {"dep": "", "end": "2026-10-14", "milestone": false, "name": "Seed bank account (~$500 each)", "notes": "", "order": 10, "owner": "Group", "phase": "1. Company and money", "progress": 0, "start": "2026-09-29", "status": "todo", "id": "t02"}, {"dep": "t01", "end": "2026-11-20", "milestone": false, "name": "Connect marketing page and collections to CherryPay", "notes": "Marketing page plus collections wired to CherryPay.", "order": 10, "owner": "Steve", "phase": "1. Company and money", "progress": 0, "start": "2026-11-02", "status": "todo", "id": "t03"}, {"dep": "", "end": "2026-09-28", "milestone": false, "name": "Training portal built (6 weeks of content)", "notes": "Platform is built and working.", "order": 20, "owner": "Aneesh", "phase": "2. Platform and curriculum", "progress": 100, "start": "2026-09-01", "status": "done", "id": "t04"}, {"dep": "", "end": "2026-10-16", "milestone": false, "name": "Review AI video questions on first 5 videos (strategic pauses)", "notes": "Rivkin verifies the model reflects each strategic pause using the review workflow attachment.", "order": 20, "owner": "Rivkin", "phase": "2. Platform and curriculum", "progress": 40, "start": "2026-09-21", "status": "progress", "id": "t06"}, {"dep": "t06", "end": "2026-11-13", "milestone": false, "name": "Apply reviewed model to full video library", "notes": "Feeds the AI helper in the platform.", "order": 20, "owner": "Aneesh", "phase": "2. Platform and curriculum", "progress": 0, "start": "2026-10-19", "status": "todo", "id": "t07"}, {"dep": "", "end": "2026-11-20", "milestone": false, "name": "Quizzes and tests at training milestones", "notes": "Quiz-gated curriculum.", "order": 20, "owner": "Aneesh + Rivkin", "phase": "2. Platform and curriculum", "progress": 0, "start": "2026-10-12", "status": "todo", "id": "t08"}, {"dep": "", "end": "2026-10-23", "milestone": false, "name": "Check CME credit hosting with Rob", "notes": "", "order": 20, "owner": "Group", "phase": "2. Platform and curriculum", "progress": 0, "start": "2026-10-05", "status": "todo", "id": "t09"}, {"dep": "", "end": "2026-11-20", "milestone": false, "name": "Video security (watermarks, secure login, takedown process)", "notes": "", "order": 20, "owner": "Aneesh", "phase": "2. Platform and curriculum", "progress": 0, "start": "2026-11-02", "status": "todo", "id": "t10"}, {"dep": "", "end": "2026-10-09", "milestone": false, "name": "Confirm venue (Rivkin's office: 5 injection rooms, cap 20)", "notes": "Office vs hotel. Rivkin can handle 20 but not more. Stations can rotate for smaller matched cohorts.", "order": 30, "owner": "Rivkin", "phase": "3. In-person week", "progress": 30, "start": "2026-09-29", "status": "progress", "id": "t11"}, {"dep": "", "end": "2026-10-23", "milestone": false, "name": "5-day curriculum outline (cadaver, hands-on, roleplay job interview)", "notes": "Needed to price everything out.", "order": 30, "owner": "Rivkin", "phase": "3. In-person week", "progress": 10, "start": "2026-09-29", "status": "progress", "id": "t12"}, {"dep": "", "end": "2026-10-30", "milestone": false, "name": "Cadaver costs and logistics (Logan via Sadot)", "notes": "", "order": 30, "owner": "Rivkin", "phase": "3. In-person week", "progress": 0, "start": "2026-10-05", "status": "todo", "id": "t13"}, {"dep": "t11", "end": "2026-10-23", "milestone": false, "name": "Event planner quote (Kerrie / Terri)", "notes": "Kerrie could manage the week for $15K, maybe $10K friends and family. She needs audience size, agenda and location.", "order": 30, "owner": "Group", "phase": "3. In-person week", "progress": 0, "start": "2026-10-05", "status": "todo", "id": "t14"}, {"dep": "t11", "end": "2026-10-23", "milestone": false, "name": "Landing page for the venue (office photos)", "notes": "iPhone photos of the space are fine, will be enhanced.", "order": 30, "owner": "Steve", "phase": "3. In-person week", "progress": 0, "start": "2026-10-12", "status": "todo", "id": "t15"}, {"dep": "", "end": "2026-11-20", "milestone": false, "name": "Pitch strategics to sponsor the 5 days", "notes": "Merz, Galderma, Revanesse. Allergan likely too much red tape.", "order": 30, "owner": "Group", "phase": "3. In-person week", "progress": 0, "start": "2026-10-12", "status": "todo", "id": "t16"}, {"dep": "t16", "end": "2026-12-18", "milestone": false, "name": "Sign first sponsor (one filler line plus one toxin line)", "notes": "Different companies for filler and toxin.", "order": 30, "owner": "Group", "phase": "3. In-person week", "progress": 0, "start": "2026-11-23", "status": "todo", "id": "t17"}, {"dep": "t12", "end": "2026-11-13", "milestone": false, "name": "Pricing plan based on curriculum cost", "notes": "Target 60% margin from tuition plus placement fees. Sponsorship is upside only.", "order": 40, "owner": "Steve", "phase": "4. Pricing and model", "progress": 0, "start": "2026-10-26", "status": "todo", "id": "t18"}, {"dep": "", "end": "2026-11-20", "milestone": false, "name": "Price the job and placement fee, reimbursements at milestones", "notes": "Placement fee ~20% of first-year salary. Refund structure of $5 to 10K still open.", "order": 40, "owner": "Steve", "phase": "4. Pricing and model", "progress": 0, "start": "2026-11-02", "status": "todo", "id": "t19"}, {"dep": "t18", "end": "2026-11-27", "milestone": true, "name": "Pricing locked (tuition, refund, tiers)", "notes": "Decide tiered membership question too.", "order": 40, "owner": "Group", "phase": "4. Pricing and model", "progress": 0, "start": "2026-11-27", "status": "todo", "id": "t20"}, {"dep": "", "end": "2026-10-16", "milestone": false, "name": "Talk to Tara: practices hiring, practices per cohort", "notes": "Also loop in Kerrie on candidate sourcing.", "order": 50, "owner": "Rivkin", "phase": "5. Candidates and practices", "progress": 10, "start": "2026-09-29", "status": "progress", "id": "t21"}, {"dep": "", "end": "2026-10-30", "milestone": false, "name": "Intake questionnaire for applicants", "notes": "", "order": 50, "owner": "Aneesh", "phase": "5. Candidates and practices", "progress": 0, "start": "2026-10-12", "status": "todo", "id": "t22"}, {"dep": "", "end": "2026-11-06", "milestone": false, "name": "Screening and application form for practices and patients", "notes": "", "order": 50, "owner": "Aneesh", "phase": "5. Candidates and practices", "progress": 0, "start": "2026-10-19", "status": "todo", "id": "t23"}, {"dep": "t22", "end": "2026-12-18", "milestone": false, "name": "Post on job boards to source nurses", "notes": "Job-post style ads to screen for the right profile.", "order": 50, "owner": "Steve", "phase": "5. Candidates and practices", "progress": 0, "start": "2026-11-02", "status": "todo", "id": "t24"}, {"dep": "t21", "end": "2026-12-18", "milestone": false, "name": "Lock one exclusive anchor practice partner", "notes": "Chains like Skin Spirit or fast-scaling independents.", "order": 50, "owner": "Group", "phase": "5. Candidates and practices", "progress": 0, "start": "2026-11-02", "status": "todo", "id": "t25"}, {"dep": "t20", "end": "2027-01-15", "milestone": false, "name": "Sell 20 spots (collect cash before booking)", "notes": "Validate before spending.", "order": 50, "owner": "Group", "phase": "5. Candidates and practices", "progress": 0, "start": "2026-11-30", "status": "todo", "id": "t26"}, {"dep": "t26", "end": "2027-01-15", "milestone": true, "name": "20 spots sold: go / no-go", "notes": "", "order": 60, "owner": "Group", "phase": "6. Launch (Q1 2027)", "progress": 0, "start": "2027-01-15", "status": "todo", "id": "t27"}, {"dep": "t27", "end": "2027-01-29", "milestone": false, "name": "Book venue, cadaver lab and event vendors", "notes": "", "order": 60, "owner": "Group", "phase": "6. Launch (Q1 2027)", "progress": 0, "start": "2027-01-18", "status": "todo", "id": "t28"}, {"dep": "t27", "end": "2027-03-05", "milestone": false, "name": "Cohort 1 online training (6 weeks)", "notes": "White-glove, high-touch.", "order": 60, "owner": "Aneesh + Rivkin", "phase": "6. Launch (Q1 2027)", "progress": 0, "start": "2027-01-25", "status": "todo", "id": "t29"}, {"dep": "t29", "end": "2027-03-12", "milestone": false, "name": "In-person week (cadaver, live injections, mock interviews)", "notes": "Candidates bring their own models.", "order": 60, "owner": "Rivkin", "phase": "6. Launch (Q1 2027)", "progress": 0, "start": "2027-03-08", "status": "todo", "id": "t30"}, {"dep": "t30", "end": "2027-03-13", "milestone": true, "name": "Apprentice Fest: job fair and practice offers", "notes": "Sponsor booths, case presentations, practices make offers.", "order": 60, "owner": "Group", "phase": "6. Launch (Q1 2027)", "progress": 0, "start": "2027-03-13", "status": "todo", "id": "t31"}], loaded=true, canWrite=false, zoom='weeks', dragging=false, dirty=false;
+var filt={owner:'',status:'',q:''}, collapsed={};
+
+try{ collapsed=JSON.parse(localStorage.getItem('p1_collapsed')||'{}'); zoom=localStorage.getItem('p1_zoom')||'weeks'; if(!PPD[zoom]) zoom='weeks'; }catch(e){}
+
+function $(id){return document.getElementById(id);}
+function h(tag,attrs){
+  var e=document.createElement(tag); attrs=attrs||{};
+  Object.keys(attrs).forEach(function(k){
+    var v=attrs[k];
+    if(k==='class') e.className=v;
+    else if(k==='style') e.style.cssText=v;
+    else if(k.slice(0,2)==='on') e.addEventListener(k.slice(2),v);
+    else if(v!==false&&v!=null) e.setAttribute(k,v);
+  });
+  for(var i=2;i<arguments.length;i++){ add(e,arguments[i]); }
+  return e;
+}
+function add(e,k){ if(k==null||k===false) return; if(Array.isArray(k)){k.forEach(function(x){add(e,x);});return;} e.appendChild(k.nodeType?k:document.createTextNode(String(k))); }
+
+function parse(s){ var p=String(s).split('-').map(Number); return Date.UTC(p[0],p[1]-1,p[2]); }
+function fmt(ms){ return new Date(ms).toISOString().slice(0,10); }
+function today(){ var n=new Date(); return Date.UTC(n.getFullYear(),n.getMonth(),n.getDate()); }
+function monday(ms){ var d=new Date(ms); return ms-((d.getUTCDay()+6)%7)*DAY; }
+function short(ms){ var d=new Date(ms); return MON[d.getUTCMonth()]+' '+d.getUTCDate(); }
+function leftW(){ return window.innerWidth<700?210:340; }
+
+function ownerList(o){ return String(o||'').split(/\s*(?:\+|&|,|\band\b)\s*/i).map(function(s){return s.trim();}).filter(Boolean); }
+function ownerColor(name){
+  var k=name.toLowerCase(); if(OWNER_COLORS[k]) return OWNER_COLORS[k];
+  var hh=0; for(var i=0;i<k.length;i++) hh=(hh*31+k.charCodeAt(i))%360; return 'hsl('+hh+',45%,48%)';
+}
+function initials(name){ var p=name.split(/\s+/); return (p[0][0]+(p[1]?p[1][0]:'')).toUpperCase(); }
+
+function toast(msg){ var t=$('toast'); t.textContent=msg; t.style.display='block'; clearTimeout(toast._t); toast._t=setTimeout(function(){t.style.display='none';},3200); }
+
+/* ---------- derived ---------- */
+function isOverdue(t){ return t.status!=='done' && parse(t.end)<today(); }
+function passFilter(t){
+  if(filt.status && t.status!==filt.status) return false;
+  if(filt.owner && ownerList(t.owner).indexOf(filt.owner)<0) return false;
+  if(filt.q){ var q=filt.q.toLowerCase(); if((t.name+' '+(t.notes||'')+' '+(t.phase||'')+' '+(t.owner||'')).toLowerCase().indexOf(q)<0) return false; }
+  return true;
+}
+function bounds(){
+  var td=today(), lo=td-14*DAY, hi=td+90*DAY;
+  tasks.forEach(function(t){ lo=Math.min(lo,parse(t.start)); hi=Math.max(hi,parse(t.end)); });
+  return {start:monday(lo-7*DAY), end:hi+21*DAY};
+}
+function warnFor(t){
+  if(!t.dep) return null;
+  var d=tasks.find(function(x){return x.id===t.dep;});
+  if(d && parse(t.start)<=parse(d.end) && d.status!=='done') return 'Starts before "'+d.name+'" finishes';
+  return null;
+}
+
+/* ---------- render ---------- */
+function renderStats(){
+  var td=today(), tot=tasks.length;
+  var done=tasks.filter(function(t){return t.status==='done';}).length;
+  var avg=tot?Math.round(tasks.reduce(function(a,t){return a+(t.status==='done'?100:(t.progress||0));},0)/tot):0;
+  var soon=tasks.filter(function(t){var e=parse(t.end);return t.status!=='done'&&e>=td&&e<=td+7*DAY;}).length;
+  var late=tasks.filter(isOverdue).length, blk=tasks.filter(function(t){return t.status==='blocked';}).length;
+  var s=$('stats'); s.textContent='';
+  [['Overall',avg+'%',''],['Done',done+'/'+tot,''],['Due in 7 days',soon,''],['Overdue',late,late?'warn':''],['Blocked',blk,blk?'warn':'']].forEach(function(x){
+    s.appendChild(h('div',{class:'stat '+x[2]},h('b',{},String(x[1])),h('span',{},x[0])));
+  });
+}
+function renderFilters(){
+  var sel=$('fOwner'), cur=filt.owner, set={};
+  tasks.forEach(function(t){ ownerList(t.owner).forEach(function(o){set[o]=1;}); });
+  var names=Object.keys(set).sort();
+  sel.textContent=''; sel.appendChild(h('option',{value:''},'All owners'));
+  names.forEach(function(n){ var o=h('option',{value:n},n); if(n===cur) o.selected=true; sel.appendChild(o); });
+}
+function renderLegend(){
+  var l=$('legend'); l.textContent='';
+  Object.keys(STATUS).forEach(function(k){ l.appendChild(h('span',{},h('i',{style:'background:'+STATUS[k].c}),STATUS[k].n)); });
+  l.appendChild(h('span',{style:'color:var(--accent)'},'Tue = weekly check-in'));
+}
+
+function groups(list){
+  var map={}, order=[];
+  list.forEach(function(t){ var p=t.phase||'Unsorted'; if(!map[p]){map[p]={name:p,items:[],ord:t.order==null?9999:t.order};order.push(p);} map[p].items.push(t); if((t.order==null?9999:t.order)<map[p].ord) map[p].ord=t.order; });
+  var gs=order.map(function(p){return map[p];}).sort(function(a,b){return a.ord-b.ord;});
+  gs.forEach(function(g){ g.items.sort(function(a,b){ return parse(a.start)-parse(b.start) || (a.order||0)-(b.order||0) || a.name.localeCompare(b.name); }); });
+  return gs;
+}
+
+function render(){
+  if(dragging){ dirty=true; return; }
+  renderStats(); renderFilters();
+  var sc=$('scroll'), sl=sc.scrollLeft, st=sc.scrollTop;
+  var inner=$('inner'); inner.textContent='';
+  var b=bounds(), ppd=PPD[zoom], LW=leftW();
+  var days=Math.round((b.end-b.start)/DAY)+1, TW=days*ppd, td=today();
+  inner.style.width=(LW+TW)+'px';
+  var step=(zoom==='days'?1:7)*ppd;
+  var tcellStyle='width:'+TW+'px;background-size:'+step+'px 100%';
+
+  /* header */
+  var mrow=h('div',{class:'mrow'}), srow=h('div',{class:'srow'});
+  var cur=b.start;
+  while(cur<=b.end){
+    var d=new Date(cur), next=Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,1);
+    var endSeg=Math.min(next,b.end+DAY), w=(endSeg-cur)/DAY*ppd;
+    mrow.appendChild(h('div',{style:'width:'+w+'px'}, w>46? MON[d.getUTCMonth()]+' '+d.getUTCFullYear():''));
+    cur=endSeg;
+  }
+  if(zoom==='days'){
+    for(var i=0;i<days;i++){ var dd=new Date(b.start+i*DAY); srow.appendChild(h('div',{class:dd.getUTCDay()===2?'tue':'',style:'width:'+ppd+'px'},DOW[dd.getUTCDay()]+dd.getUTCDate())); }
+  } else {
+    for(var j=0;j<days;j+=7){ var wd=b.start+j*DAY; var lab= ppd>=10 ? short(wd) : '';
+      srow.appendChild(h('div',{class:'wk',style:'width:'+(7*ppd)+'px'},lab)); }
+  }
+  inner.appendChild(h('div',{class:'hdr'},
+    h('div',{class:'lcell',style:'width:'+LW+'px'},h('span',{style:'flex:1'},'Workstream / task'),h('span',{},'Owner')),
+    h('div',{class:'tl',style:'width:'+TW+'px'},mrow,srow)));
+
+  /* body */
+  var visible=tasks.filter(passFilter);
+  if(loaded && tasks.length===0){
+    inner.appendChild(h('div',{class:'empty'},h('h3',{},'No tasks yet'),h('div',{},'Add your first task to start building the timeline.')));
+  } else if(loaded && visible.length===0){
+    inner.appendChild(h('div',{class:'empty'},h('h3',{},'Nothing matches'),h('div',{},'Adjust the filters to see tasks.')));
+  }
+  groups(visible).forEach(function(g){
+    var isC=!!collapsed[g.name];
+    var mn=Infinity,mx=-Infinity,sum=0;
+    g.items.forEach(function(t){ mn=Math.min(mn,parse(t.start)); mx=Math.max(mx,parse(t.end)); sum+=(t.status==='done'?100:(t.progress||0)); });
+    var pct=Math.round(sum/g.items.length);
+    var gx=(mn-b.start)/DAY*ppd, gw=((mx-mn)/DAY+1)*ppd;
+    var sumbar=h('div',{class:'gsum',style:'left:'+gx+'px;width:'+gw+'px'},h('i',{style:'width:'+pct+'%'}));
+    var row=h('div',{class:'row grp'+(isC?' collapsed':'')},
+      h('div',{class:'lcell',style:'width:'+LW+'px',onclick:function(){ collapsed[g.name]=!collapsed[g.name]; try{localStorage.setItem('p1_collapsed',JSON.stringify(collapsed));}catch(e){} render(); }},
+        h('span',{class:'caret'},'\u25BE'),
+        h('span',{class:'gname'},g.name),
+        h('span',{class:'gmeta'},g.items.length+' \u00B7 '+pct+'%'),
+        null),
+      h('div',{class:'tcell',style:tcellStyle},sumbar));
+    inner.appendChild(row);
+    if(isC) return;
+    g.items.forEach(function(t){ inner.appendChild(taskRow(t,b,ppd,LW,tcellStyle,td)); });
+  });
+
+  /* today line */
+  if(td>=b.start&&td<=b.end){
+    var x=LW+((td-b.start)/DAY)*ppd+ppd/2;
+    inner.appendChild(h('div',{class:'todayline',style:'left:'+x+'px'}));
+    inner.appendChild(h('div',{class:'todaytag',style:'left:'+x+'px;top:52px;z-index:5'},'TODAY'));
+  }
+  sc.scrollLeft=sl; sc.scrollTop=st;
+  
+}
+
+function taskRow(t,b,ppd,LW,tcellStyle,td){
+  var st=STATUS[t.status]||STATUS.todo, done=t.status==='done';
+  var owners=ownerList(t.owner), main=owners[0]||'';
+  var w=warnFor(t);
+  var chk=h('span',{class:'chk'+(done?' done':''),title:st.n},done?'\u2713':'');
+  var own=main?h('span',{class:'own',title:t.owner},h('b',{style:'background:'+ownerColor(main)},initials(main)),h('span',{},t.owner)):null;
+  var l=h('div',{class:'lcell',style:'width:'+LW+'px'},
+    chk,
+    h('span',{class:'tname'+(done?' done':''),title:t.name,onclick:function(){openModal(t.id);}},t.name),
+    w?h('span',{class:'warn',title:w},'\u26A0'):null,
+    own);
+  var tc=h('div',{class:'tcell',style:tcellStyle});
+  var s=parse(t.start), e=parse(t.end);
+  var x=(s-b.start)/DAY*ppd, wpx=((e-s)/DAY+1)*ppd;
+  var late=isOverdue(t);
+  var lab=(owners.join(' + ')||'')+(t.milestone?'':(' \u00B7 '+short(s)+' to '+short(e)+' \u00B7 '+(done?100:(t.progress||0))+'%'));
+  if(t.milestone){
+    var m=h('div',{class:'ms',style:'left:'+(x+ppd/2)+'px;--c:'+st.c,title:t.name+' ('+short(s)+')'},h('i'),h('span',{class:'lab'},short(s)+' \u00B7 '+t.name));
+    attachOpen(m,t);
+    tc.appendChild(m);
+  } else {
+    var prog=done?100:(t.progress||0);
+    var bar=h('div',{class:'tbar'+(late?' late':''),style:'left:'+x+'px;width:'+wpx+'px;--c:'+st.c,title:t.name},
+      h('div',{class:'fill'+(prog>=100?' full':''),style:'width:'+prog+'%'}),
+            h('span',{class:'lab'},lab));
+    attachOpen(bar,t);
+    tc.appendChild(bar);
+  }
+  return h('div',{class:'row'},l,tc);
+}
+
+/* ---------- details ---------- */
+function attachOpen(el,t){ el.addEventListener('click',function(){ openDetail(t.id); }); el.setAttribute('tabindex','0'); el.setAttribute('role','button'); el.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openDetail(t.id); } }); }
+function longDate(ms){ var d=new Date(ms); return MON[d.getUTCMonth()]+' '+d.getUTCDate()+', '+d.getUTCFullYear(); }
+function openDetail(id){
+  var t=tasks.find(function(x){return x.id===id;}); if(!t) return;
+  var st=STATUS[t.status]||STATUS.todo, s=parse(t.start), e=parse(t.end);
+  var pill=$('dStatus'); pill.textContent=st.n; pill.style.background=st.c;
+  $('dTitle').textContent=t.name;
+  var g=$('dGrid'); g.textContent='';
+  var nd=Math.round((e-s)/DAY)+1;
+  var items=[['Owner',t.owner||'Unassigned'],['Workstream',t.phase||'Unsorted']];
+  if(t.milestone){ items.push(['Date',longDate(s)],['Type','Milestone']); }
+  else { items.push(['Start',longDate(s)],['End',longDate(e)],['Duration',nd+(nd===1?' day':' days')],['Type','Task']); }
+  items.forEach(function(x){ g.appendChild(h('div',{},h('small',{},x[0]),h('span',{},x[1]))); });
+  var prog=t.status==='done'?100:(t.progress||0);
+  $('dFill').style.width=prog+'%'; $('dFill').style.setProperty('--c',st.c); $('dPct').textContent=prog+'%';
+  var w=warnFor(t), late=isOverdue(t), msg=w||(late?'This task is past its end date and not marked done.':null);
+  var dw=$('dWarn'); dw.style.display=msg?'block':'none'; dw.textContent=msg||'';
+  $('dNotes').textContent=t.notes||'No notes yet.';
+  var dep=t.dep?tasks.find(function(x){return x.id===t.dep;}):null, dd=$('dDep'); dd.textContent='';
+  $('dDepL').style.display=dep?'block':'none';
+  if(dep){ dd.appendChild(h('button',{class:'deplink',onclick:function(){openDetail(dep.id);}},dep.name)); }
+  $('mask').classList.add('on');
+}
+function closeModal(){ $('mask').classList.remove('on'); }
+
+/* ---------- wiring ---------- */
+function scrollToToday(smooth){
+  var b=bounds(), ppd=PPD[zoom];
+  var x=((today()-b.start)/DAY)*ppd - 120;
+  $('scroll').scrollTo({left:Math.max(0,x),behavior:smooth?'smooth':'auto'});
+}
+$('fOwner').addEventListener('change',function(e){ filt.owner=e.target.value; render(); });
+$('fStatus').addEventListener('change',function(e){ filt.status=e.target.value; render(); });
+$('fQ').addEventListener('input',function(e){ filt.q=e.target.value.trim(); render(); });
+$('zoom').addEventListener('click',function(e){
+  var z=e.target.getAttribute&&e.target.getAttribute('data-z'); if(!z) return;
+  zoom=z; try{localStorage.setItem('p1_zoom',z);}catch(x){}
+  Array.prototype.forEach.call($('zoom').children,function(b){ b.classList.toggle('on',b.getAttribute('data-z')===z); });
+  render(); scrollToToday(false);
+});
+$('bToday').addEventListener('click',function(){ scrollToToday(true); });
+$('bCollapse').addEventListener('click',function(){
+  var all=groups(tasks), anyOpen=all.some(function(g){return !collapsed[g.name];});
+  all.forEach(function(g){ collapsed[g.name]=anyOpen; });
+  try{localStorage.setItem('p1_collapsed',JSON.stringify(collapsed));}catch(e){}
+  $('bCollapse').textContent=anyOpen?'Expand all':'Collapse all'; render();
+});
+$('dClose').addEventListener('click',closeModal);
+$('mask').addEventListener('mousedown',function(e){ if(e.target===$('mask')) closeModal(); });
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape') closeModal();
+});
+var rz; window.addEventListener('resize',function(){ clearTimeout(rz); rz=setTimeout(render,150); });
+Array.prototype.forEach.call($('zoom').children,function(b){ b.classList.toggle('on',b.getAttribute('data-z')===zoom); });
+
+renderLegend(); render(); scrollToToday(false);
+
+})();
+</script>
+</body>
+</html>
